@@ -1,0 +1,43 @@
+// 6-bit 电压 DAC。教学用行为模型，t28 0.9 V。
+//
+// [给你看的对照] 刚学 Python 的话：
+//   Verilog-A 不是 Python，是给 Spectre 这类模拟仿真器用的。
+//   analog begin ... end   ≈  连续时间里一直在算的函数
+//   code / 63.0 * vmax     和 mvm_ref.py 里 (x/63)*vref 同一公式
+// 量化约定与数字黄金模型一致：code 0..63 → 0..VREF。
+// 公式参考 AnalogHub DAC 行为模型（https://analoghub.ie），接口与位宽按本项目改写。
+
+`include "constants.vams"
+`include "disciplines.vams"
+
+module dac6(vout, code0, code1, code2, code3, code4, code5, clk);
+    parameter real vmin = 0.0;
+    parameter real vmax = 0.6;
+    parameter real vdd  = 0.9;
+    parameter real vss  = 0.0;
+    parameter real td   = 1n;
+    parameter real tt   = 200p;
+    parameter real thresh = 0.45;
+
+    output vout;
+    input code0, code1, code2, code3, code4, code5, clk;
+    electrical vout, code0, code1, code2, code3, code4, code5, clk;
+
+    integer code;
+    real aout;
+
+    analog begin
+        // 时钟过阈值上升沿采样 6 根数字线；initial_step 给出 t=0 的直流值
+        @(cross(V(clk) - thresh, +1) or initial_step) begin
+            code = 0;
+            if (V(code0) > thresh) code = code + 1;
+            if (V(code1) > thresh) code = code + 2;
+            if (V(code2) > thresh) code = code + 4;
+            if (V(code3) > thresh) code = code + 8;
+            if (V(code4) > thresh) code = code + 16;
+            if (V(code5) > thresh) code = code + 32;
+            aout = vmin + (vmax - vmin) * code / 63.0;
+        end
+        V(vout) <+ transition(aout, td, tt);
+    end
+endmodule

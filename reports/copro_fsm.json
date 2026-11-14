@@ -1,0 +1,29 @@
+{
+  "expected_latency_cycles": 13,
+  "expected_latency_ns_50mhz": 260,
+  "zeros": {
+    "latency_reg": 13,
+    "done_at_cycle": 13,
+    "irq_at_cycle": 13,
+    "outpack": 0,
+    "irq_after_w1c": 0,
+    "done": 1
+  },
+  "fullscale": {
+    "latency_reg": 13,
+    "done_at_cycle": 13,
+    "irq_at_cycle": 13,
+    "outpack": 1061109567,
+    "irq_after_w1c": 0,
+    "done": 1
+  },
+  "mixed": {
+    "latency_reg": 13,
+    "done_at_cycle": 13,
+    "irq_at_cycle": 13,
+    "outpack": 420484641,
+    "irq_after_w1c": 0,
+    "done": 1
+  },
+  "errors": []
+}

@@ -1,0 +1,178 @@
+{
+  "directed": [
+    {
+      "name": "zeros",
+      "x": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "y_int": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "y_real_ideal": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "err_lsb": 0
+    },
+    {
+      "name": "fullscale",
+      "x": [
+        63,
+        63,
+        63,
+        63
+      ],
+      "y_int": [
+        63,
+        63,
+        63,
+        63
+      ],
+      "y_real_ideal": [
+        63,
+        63,
+        63,
+        63
+      ],
+      "err_lsb": 0
+    },
+    {
+      "name": "mixed",
+      "x": [
+        40,
+        50,
+        60,
+        63
+      ],
+      "y_int": [
+        33,
+        22,
+        16,
+        25
+      ],
+      "y_real_ideal": [
+        34,
+        23,
+        17,
+        25
+      ],
+      "err_lsb": 1
+    },
+    {
+      "name": "identity_like",
+      "x": [
+        16,
+        32,
+        48,
+        63
+      ],
+      "y_int": [
+        4,
+        8,
+        12,
+        15
+      ],
+      "y_real_ideal": [
+        4,
+        8,
+        12,
+        16
+      ],
+      "err_lsb": 1
+    }
+  ],
+  "random_int_vs_int": {
+    "n": 500,
+    "mismatch": 0.0,
+    "max_err_lsb": 0,
+    "err0": 500,
+    "err1": 0,
+    "err_gt1": 0,
+    "pass_le1": true,
+    "worst": null
+  },
+  "random_real_mismatch_0": {
+    "n": 500,
+    "mismatch": 0.0,
+    "max_err_lsb": 1,
+    "err0": 19,
+    "err1": 481,
+    "err_gt1": 0,
+    "pass_le1": true,
+    "worst": null
+  },
+  "random_real_mismatch_1pct": {
+    "n": 500,
+    "mismatch": 0.01,
+    "max_err_lsb": 1,
+    "err0": 25,
+    "err1": 475,
+    "err_gt1": 0,
+    "pass_le1": true,
+    "worst": null
+  },
+  "random_real_mismatch_5pct": {
+    "n": 500,
+    "mismatch": 0.05,
+    "max_err_lsb": 2,
+    "err0": 17,
+    "err1": 469,
+    "err_gt1": 14,
+    "pass_le1": false,
+    "worst": {
+      "err": 2,
+      "x": [
+        35,
+        47,
+        52,
+        51
+      ],
+      "w": [
+        [
+          59,
+          6,
+          12,
+          60
+        ],
+        [
+          4,
+          0,
+          5,
+          14
+        ],
+        [
+          17,
+          45,
+          34,
+          45
+        ],
+        [
+          60,
+          31,
+          30,
+          13
+        ]
+      ],
+      "y_int": [
+        24,
+        16,
+        15,
+        22
+      ],
+      "y_real": [
+        26,
+        17,
+        16,
+        23
+      ]
+    }
+  }
+}

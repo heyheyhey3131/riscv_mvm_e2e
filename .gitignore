@@ -1,0 +1,12 @@
+simv*
+csrc/
+*.vpd
+*.fsdb
+*.vcd
+*.vvp
+ucli.key
+DVEfiles/
+*.log
+__pycache__/
+*.pyc
+/tmp/

@@ -1,0 +1,40 @@
+// 6-bit 理想 ADC。采样 clk 上升沿，均匀量化 vmin..vmax。
+//
+// [给你看的对照] 刚学 Python 的话：
+//   DAC 的逆操作：电压 → 6-bit 码。公式和 mvm_ref.py 里 round(I/Ifs*63) 同类。
+//   本文件给 Spectre 用；日常 ISS / Icarus 不读它。
+// 公式参考 AnalogHub ADC 行为模型（https://analoghub.ie），改为 6-bit / 0.9 V。
+
+`include "constants.vams"
+`include "disciplines.vams"
+
+module adc6(d0, d1, d2, d3, d4, d5, vin, clk);
+    parameter real vmin = 0.0;
+    parameter real vmax = 0.6;
+    parameter real vdd  = 0.9;
+    parameter real vss  = 0.0;
+    parameter real td   = 1n;
+    parameter real tt   = 200p;
+    parameter real thresh = 0.45;
+
+    output d0, d1, d2, d3, d4, d5;
+    input vin, clk;
+    electrical d0, d1, d2, d3, d4, d5, vin, clk;
+
+    integer result;
+
+    analog begin
+        // +0.5 再截断 ≈ round；输出用 transition 避免数字边沿无穷陡
+        @(cross(V(clk) - thresh, +1) or initial_step) begin
+            result = 63.0 * (V(vin) - vmin) / (vmax - vmin) + 0.5;
+            if (result > 63) result = 63;
+            if (result < 0)  result = 0;
+        end
+        V(d0) <+ transition((result & 1)    ? vdd : vss, td, tt);
+        V(d1) <+ transition((result & 2)    ? vdd : vss, td, tt);
+        V(d2) <+ transition((result & 4)    ? vdd : vss, td, tt);
+        V(d3) <+ transition((result & 8)    ? vdd : vss, td, tt);
+        V(d4) <+ transition((result & 16)   ? vdd : vss, td, tt);
+        V(d5) <+ transition((result & 32)   ? vdd : vss, td, tt);
+    end
+endmodule

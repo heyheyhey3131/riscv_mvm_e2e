@@ -1,0 +1,49 @@
+// 4x4 电流型电阻/电导阵列：I_j = sum_i V_i * G_ij
+//
+// [给你看的对照] 刚学 Python 的话：
+//   这是「真·模拟」阵列：电压 × 电导 = 电流。数字版在 mvm_array_digital.v / mvm_int()。
+//   parameter real w00=0  每个电阻的权重，仿真时再改；数字版则是 MMIO 写入的 6-bit 码。
+// G_ij = G_UNIT * w_ij, w 为 6-bit 数字码（0..63）
+// 列电流再经跨阻 R_T 变成电压，送给 adc6。
+// 默认：G_UNIT=1uS, R_T 选得使满量程电流对应 0.6 V。
+
+`include "constants.vams"
+`include "disciplines.vams"
+
+module mvm_array_4x4(
+    vin0, vin1, vin2, vin3,
+    iout0, iout1, iout2, iout3,
+    vout0, vout1, vout2, vout3
+);
+    parameter real g_unit = 1.0e-6;
+    parameter real r_t    = 3.968253968e3; // 0.6 / (4*0.6*63*1e-6) = 1/(4*63e-6)
+
+    input vin0, vin1, vin2, vin3;
+    inout iout0, iout1, iout2, iout3;
+    output vout0, vout1, vout2, vout3;
+    electrical vin0, vin1, vin2, vin3;
+    electrical iout0, iout1, iout2, iout3;
+    electrical vout0, vout1, vout2, vout3;
+
+    parameter real w00=0, w01=0, w02=0, w03=0;
+    parameter real w10=0, w11=0, w12=0, w13=0;
+    parameter real w20=0, w21=0, w22=0, w23=0;
+    parameter real w30=0, w31=0, w32=0, w33=0;
+
+    analog begin
+        // 列电流：欧姆定律求和。权重目前是 parameter，第一版网表手动绑。
+        I(iout0) <+ V(vin0)*g_unit*w00 + V(vin1)*g_unit*w10
+                  + V(vin2)*g_unit*w20 + V(vin3)*g_unit*w30;
+        I(iout1) <+ V(vin0)*g_unit*w01 + V(vin1)*g_unit*w11
+                  + V(vin2)*g_unit*w21 + V(vin3)*g_unit*w31;
+        I(iout2) <+ V(vin0)*g_unit*w02 + V(vin1)*g_unit*w12
+                  + V(vin2)*g_unit*w22 + V(vin3)*g_unit*w32;
+        I(iout3) <+ V(vin0)*g_unit*w03 + V(vin1)*g_unit*w13
+                  + V(vin2)*g_unit*w23 + V(vin3)*g_unit*w33;
+
+        V(vout0) <+ I(iout0) * r_t;
+        V(vout1) <+ I(iout1) * r_t;
+        V(vout2) <+ I(iout2) * r_t;
+        V(vout3) <+ I(iout3) * r_t;
+    end
+endmodule

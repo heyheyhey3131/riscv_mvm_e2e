@@ -1,0 +1,69 @@
+{
+  "hex": "D:\\FileFolder\\MuMuShared\\Download\\digital_ic_flow_learning\\riscv_mvm_e2e\\fw\\hex\\e2e_mvm.hex",
+  "tohost": 1,
+  "uart": "PASS\n",
+  "cycles": 5658,
+  "instret": 5655,
+  "irq_seen": 3,
+  "irq_enter_pcs": [
+    372,
+    372,
+    372
+  ],
+  "events": [
+    {
+      "cyc": 37,
+      "ev": "start",
+      "addr": 536870912,
+      "data": 3
+    },
+    {
+      "cyc": 50,
+      "ev": "irq_enter",
+      "mepc": 372
+    },
+    {
+      "cyc": 56,
+      "ev": "irq_w1c",
+      "addr": 536870920,
+      "data": 1
+    },
+    {
+      "cyc": 925,
+      "ev": "start",
+      "addr": 536870912,
+      "data": 3
+    },
+    {
+      "cyc": 938,
+      "ev": "irq_enter",
+      "mepc": 372
+    },
+    {
+      "cyc": 944,
+      "ev": "irq_w1c",
+      "addr": 536870920,
+      "data": 1
+    },
+    {
+      "cyc": 3744,
+      "ev": "start",
+      "addr": 536870912,
+      "data": 3
+    },
+    {
+      "cyc": 3757,
+      "ev": "irq_enter",
+      "mepc": 372
+    },
+    {
+      "cyc": 3763,
+      "ev": "irq_w1c",
+      "addr": 536870920,
+      "data": 1
+    }
+  ],
+  "mvm_latency_reg": 13,
+  "mvm_outpack": 420484641,
+  "pass": true
+}
