@@ -295,6 +295,9 @@ def main():
 
     # smoke.S：lui/addi/sw 写 TOHOST，只证明 CPU 能取指、能写 MMIO。
     # 终端：assembled .../smoke.S -> .../smoke.hex  (4 words, last=0xc)
+    # 同时写出中间文件（就在 hex 旁边）：
+    #   smoke.pass1.txt  pass1 结束：标签/地址 + 仍是文本的指令
+    #   smoke.pass2.txt  pass2 结束：已经是 32-bit 机器码
     # 这个 list 跨了好几行，只是为了好读，和写成一行意思完全一样。
     # 每一项都会成为子进程的一个 argv：
     #   argv[0] = python.exe

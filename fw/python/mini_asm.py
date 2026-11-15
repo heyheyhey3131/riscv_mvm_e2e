@@ -514,13 +514,70 @@ class Assembler:
         return "\n".join(lines) + "\n"
 
 
-def assemble_file(src: Path, ram_bytes=8192):
-    """读一个 .S 文件 → (汇编器实例, {地址: 机器码})。"""
+def _format_payload(kind, payload) -> str:
+    if kind == "op":
+        return " ".join(payload)
+    if kind == "word":
+        return f".word 0x{payload & 0xFFFFFFFF:08x}"
+    if kind == "word_expr":
+        return f".word {payload}"
+    return repr(payload)
+
+
+def format_pass1(asm: Assembler) -> str:
+    """pass1 刚结束时的中间表示：标签已变成地址，指令还是助记符。"""
+    lines = [
+        "# pass1 结束：.S 已被切成「地址 + token」，还没有 32-bit 机器码。",
+        "# .equ / labels 已经能查表；items 里的指令仍是文本。",
+        "",
+        "[.equ]",
+    ]
+    for name, val in asm.equ.items():
+        lines.append(f"  {name} = 0x{int(val):x}")
+    lines += ["", "[labels]"]
+    for name, addr in sorted(asm.labels.items(), key=lambda kv: (kv[1], kv[0])):
+        lines.append(f"  {addr:08x}  {name}")
+    lines += ["", "[items]  # pc / 源文件行号 / 种类 / 仍是文本的指令"]
+    for pc, kind, payload, lineno in asm.items:
+        lines.append(
+            f"  pc={pc:08x}  line={lineno:<4}  {kind:<10} {_format_payload(kind, payload)}"
+        )
+    return "\n".join(lines) + "\n"
+
+
+def format_pass2(asm: Assembler, words) -> str:
+    """pass2 刚结束时的中间表示：每条指令已经是 32-bit 机器字。"""
+    lines = [
+        "# pass2 结束：.S 已经变成 {地址: 32-bit 机器码}。",
+        "# 后面 to_hex 不再编码，只是把这些字按 8KB RAM 铺成 hex 文本。",
+        "",
+        "[words]  # 地址  机器码    源文件行号  对应的 pass1 token",
+    ]
+    for pc, kind, payload, lineno in asm.items:
+        w = words.get(pc, 0)
+        lines.append(
+            f"  {pc:08x}  {w:08x}  line={lineno:<4}  {_format_payload(kind, payload)}"
+        )
+    return "\n".join(lines) + "\n"
+
+
+def assemble_file(src: Path, ram_bytes=8192, dump_prefix=None):
+    """读一个 .S 文件 → (汇编器实例, {地址: 机器码})。
+
+    dump_prefix 若给定（通常是将要写的 .hex 路径），则：
+      pass1 一结束写  <stem>.pass1.txt
+      pass2 一结束写  <stem>.pass2.txt
+    用来对照「每一轮之后 .S 变成了什么」。
+    """
     asm = Assembler()
     # Path.read_text 一次读进字符串；splitlines() 按行切成 list
     lines = src.read_text(encoding="utf-8").splitlines()
     asm.pass1(lines)
+    if dump_prefix is not None:
+        dump_prefix.with_suffix(".pass1.txt").write_text(format_pass1(asm), encoding="utf-8")
     words = asm.pass2()
+    if dump_prefix is not None:
+        dump_prefix.with_suffix(".pass2.txt").write_text(format_pass2(asm, words), encoding="utf-8")
     return asm, words
 
 
@@ -529,8 +586,12 @@ def main():
     parser.add_argument("src", type=Path)           # 位置参数：命令行第一个文件名
     parser.add_argument("-o", "--output", type=Path)  # 可选，没写就是 None
     parser.add_argument("--map", action="store_true")
+    parser.add_argument(
+        "--no-dump-ir",
+        action="store_true",
+        help="不写 pass1/pass2 中间文件（默认会写 <hex>.pass1.txt / .pass2.txt）",
+    )
     args = parser.parse_args()
-    asm, words = assemble_file(args.src)
     out = args.output
     if out is None:
         out = args.src.with_suffix(".hex")          # 只换后缀：foo.S → foo.hex
@@ -538,6 +599,8 @@ def main():
             # stem = 不带后缀的文件名。字符串 + 拼接，得到 "e2e_mvm.hex"
             out = ROOT / "fw" / "hex" / (args.src.stem + ".hex")
     out.parent.mkdir(parents=True, exist_ok=True)
+    dump_prefix = None if args.no_dump_ir else out
+    asm, words = assemble_file(args.src, dump_prefix=dump_prefix)
     # asm.to_hex(words)  先调用方法得到整段 hex 文本，再作为 write_text 的位置参数
     out.write_text(asm.to_hex(words), encoding="ascii")
     # max(words)  对 dict 取 max 得到最大的键（这里是最大地址）
@@ -549,6 +612,9 @@ def main():
     # len(words) = 真正编出机器码的字数（空洞 .org 不算）。
     # last = 最大地址：smoke 的 jal hang 在 0x0C；e2e 的 write_tohost 末字节到 0x3EC。
     print(f"assembled {args.src} -> {out}  ({len(words)} words, last=0x{used:x})")
+    if dump_prefix is not None:
+        print(f"  pass1 -> {out.with_suffix('.pass1.txt')}")
+        print(f"  pass2 -> {out.with_suffix('.pass2.txt')}")
     if args.map:
         # asm.labels.items()  得到 (名字, 地址) 对的列表
         # sorted(..., key=lambda kv: kv[1])
