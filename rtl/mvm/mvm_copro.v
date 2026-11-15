@@ -76,8 +76,10 @@ reg [7:0]  cnt;
 wire [7:0] settle_n = (cfg[7:0]   == 8'd0) ? 8'd1 : cfg[7:0];
 wire [7:0] adc_n    = (cfg[15:8]  == 8'd0) ? 8'd1 : cfg[15:8];
 wire       irq_en   = ctrl[1];
-// START 是写脉冲：wdata[0]=1 的那一拍启动，不锁进 ctrl
-wire       start_w  = wr && (off == OFF_CTRL) && wdata[0];
+// START 是写脉冲：wstrb[0] 真正写字节 0 且 wdata[0]=1 才启动，不锁进 ctrl
+wire       start_w  = wr && (off == OFF_CTRL) && wstrb[0] && wdata[0];
+// 注意：ctrl 在同一个 posedge 更新，ST_ADC 采样 irq_en 时已经能看到
+// 本次写入的 IRQ_EN；所以一次写 3（START|IRQ_EN）也能正常拉 IRQ。
 
 wire [31:0] y_comb;
 mvm_array_digital u_array (

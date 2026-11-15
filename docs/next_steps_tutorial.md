@@ -117,7 +117,7 @@ ls rtl/mvm scripts/asic fw/hex
 python3 scripts/sim/run_all.py
 ```
 
-必须再看到：`ISS_PASS`、`COPRO_FSM_PASS`、`PRECISION_PASS`。  
+必须再看到：`ISS_PASS`、`ASSEMBLER_PASS`、`CONSISTENCY_PASS`、`COPRO_FSM_PASS`、`PRECISION_PASS`。  
 这一步不过，后面的波形和版图没有意义。
 
 标准单元（脚本已写死，你只需知道在哪）：

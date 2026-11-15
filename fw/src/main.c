@@ -1,6 +1,6 @@
 #include "mvm_hw.h"   /* 把 mvm_hw.h 里的 #define 和内联函数粘进来，类似 Python 的 from socmap import ... */
 
-/* 可读的 C 版端到端程序。需要 riscv32-unknown-elf-gcc。
+/* 可读的 C 版端到端程序。需要 riscv32-unknown-elf-gcc（-march=rv32i_zicsr）。
  * 日常仿真请用 fw/asm/e2e_mvm.S + mini_asm.py，不必装交叉编译器。
  *
  * [给你看的对照] 刚学 Python 的话：
@@ -10,6 +10,17 @@
  *   while (*s)              *s 是指针解引用：取出 s 指向的那个字符
  *   gold_pack / cmp4_1lsb   和汇编版、mvm_ref.py 的 mvm_int 是同一套公式
  */
+
+/* C 版必须自己开机器外部中断；否则 run_one() 等 0x1F00 会永远等不到。
+ * 汇编版在 e2e_mvm.S 的 main 里用 csrw 做了同样的事。
+ * 这里把 CSR 号直接写成立即数，避免函数参数不能作为 "i" 约束的问题。 */
+static inline void enable_machine_irq(void)
+{
+    unsigned meie = 1u << 11;
+    unsigned mie  = 1u << 3;
+    __asm__ volatile ("csrw 0x304, %0" :: "r"(meie) : "memory");
+    __asm__ volatile ("csrw 0x300, %0" :: "r"(mie) : "memory");
+}
 
 static void putc_uart(char c)
 {
@@ -86,7 +97,7 @@ static int cmp4_1lsb(unsigned got, unsigned exp)
     return 1;
 }
 
-/* 写寄存器、发 START、忙等 0x1F00。开中断必须在进入本函数之前完成。 */
+/* 写寄存器、发 START、忙等 0x1F00。进入本函数前必须已经 enable_machine_irq()。 */
 static unsigned run_one(unsigned x, unsigned w0, unsigned w1, unsigned w2, unsigned w3)
 {
     volatile unsigned *flag = (volatile unsigned *)0x00001F00u;
@@ -106,8 +117,10 @@ int main(void)
 {
     unsigned got, exp;
 
-    /* mie.MEIE, mstatus.MIE — 与汇编版相同，需在 start.S 里做，或用内联 CSR */
-    mmio_write(MVM_CONFIG, 8u | (4u << 8));
+    /* mie.MEIE, mstatus.MIE — 与汇编版 main 相同 */
+    enable_machine_irq();
+
+    mmio_write(MVM_CONFIG, (unsigned)MVM_SETTLE_DEFAULT | ((unsigned)MVM_ADC_DEFAULT << 8));
     mmio_write(MVM_CTRL, MVM_CTRL_IRQ_EN);
 
     got = run_one(0, 0, 0, 0, 0);

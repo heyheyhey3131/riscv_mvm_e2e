@@ -1,15 +1,16 @@
 # 题目 G 完成情况报告
 
-日期：2026-11-02（第二次推进：部署到 inner-admin + TSMC28）  
+日期：2026-11-15（第三次：代码一致性审计 + 修复）  
 工程：`riscv_mvm_e2e/`  
 题目原文：`main_requirement.txt`
 
 ## 一句话结论
 
-**功能闭环（RISC-V 写向量 → MVM → 中断读回 → 黄金比对）已经完成，并已部署到课题服务器 inner-admin。**  
-**「全流程到版图」仍未完成：** VCS 编译解析通过后被系统 Killed；DC 已在后台启动，面积/PT/Innovus 尚未出结果。
+**功能闭环（RISC-V 写向量 → MVM → 中断读回 → 黄金比对）已经完成，并已在 inner-admin 复现。**  
+**「全流程到版图」仍未完成：** VCS 编译解析通过后被系统 Killed；DC/PT/Innovus 没有成功产出面积、WNS、DEF/GDS。
 
-不要把 ISS_PASS 说成已经签核或已经出 GDS。
+不要把 ISS_PASS 说成已经签核或已经出 GDS。  
+代码层面的问题与修复见 `reports/LOGIC_AUDIT.md`。
 
 ---
 
@@ -43,16 +44,32 @@ $TSMC28/T28HPC+IP/tcbn28hpcplusbwp30p140_190a/TSMCHOME/digital/
 | 6-bit ADC 行为模型 | **行为模型完成** | 量化 0..63；AMS 未跑 |
 | 寄存器接口 | **完成** | `docs/memory_map.md` |
 | 端到端写向量→MVM→读回比对 | **ISS 通过（本机 + inner-admin）** | UART `PASS`，`tohost=1`，5658 周期，irq×3 |
-| 全流程到版图 | **未完成** | VCS 被 Killed；DC 后台刚启动；无 GDS |
+| 全流程到版图 | **未完成** | VCS 被 Killed；DC/PT/Innovus 未产出；无 GDS |
 | t28 / 0.9 V | **库已对接，综合未出报告** | Techlib TSMC28 + `run_dc.tcl` |
 | MVM 误差 ≤ 1 LSB | **通过（理想 / 1% 失配）** | inner-admin `PRECISION_PASS` |
 | 总线读写正确 | ISS + FSM 通过；HDL 波形未拿到 | VCS 未跑完 |
 | 中断握手正确 | **ISS 通过** | 三次 start→irq(+13)→W1C |
 | PVT 接口裕量 ≥ 20% | 仅有 SDC | `uncertainty 4 ns @ 20 ns`；PT 未跑 |
 | 协处理器面积 | **未测** | 等 `work_t28/reports/area.rpt` |
-| 访问延迟 | **已测** | 13 cycle = 260 ns @ 50 MHz |
+| 访问延迟 | **FSM/ISS 模型已测** | 13 cycle = 260 ns @ 50 MHz；无后仿值 |
 
 ---
+
+## 本次（11-15）代码审计修复
+
+已修复并加入回归：
+
+- UART 忙时不再返回 ready，避免连续 `putc` 静默丢字符
+- RAM 片选收紧到 8 KB；0x0000_2000 以上不再别名到 mem[0]
+- `START` 只在 `wstrb[0]` 真正写 CTRL 字节 0 时触发
+- C 固件补 `mie.MEIE` / `mstatus.MIE`，否则 `run_one` 永远等不到 flag
+- `mini_asm` 修复 `jr` 伪指令；明确 `li` 只支持 12-bit
+- 删除 `mvm_array_real` 未生效的 `MISMATCH` 参数
+- ISS 报告不再写绝对路径
+- 增加 `check_consistency.py` / `check_assembler.py`，`run_all.py` 自动跑
+- 修正 README / asic README / area_latency 里过期的 EDA2035 描述
+
+本地回归仍为：`ISS_PASS` ×2、`ASSEMBLER_PASS`、`CONSISTENCY_PASS`、`COPRO_FSM_PASS`、`PRECISION_PASS`。
 
 ## 本次（11-02 晚）实际跑通的命令
 
@@ -131,7 +148,7 @@ Windows 本机：`python scripts/sim/run_all.py` 仍然是最快回归。
 | 数字 RTL + 固件 | ~90% | ~90% | |
 | 功能 / 精度 / 中断 | ~85% | **~90%** | inner-admin ISS 复现 |
 | 混合信号 | ~40% | ~40% | |
-| t28 综合 / STA / 版图 | ~10% | **~25%** | 库路径落地、脚本齐、DC 已提交；无面积无 GDS |
+| t28 综合 / STA / 版图 | ~10% | **~25%** | 库路径落地、脚本齐；DC 尚未成功，无面积无 GDS |
 | 服务器部署 | 0 | **~80%** | 工程在 admin `ic_proj` 下，库只读引用 Techlib |
 | **题目 G 整体** | ~45–50% | **约 55%** | 功能可演示；版图仍缺 |
 

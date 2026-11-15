@@ -1,5 +1,5 @@
 {
-  "hex": "D:\\FileFolder\\MuMuShared\\Download\\digital_ic_flow_learning\\riscv_mvm_e2e\\fw\\hex\\e2e_mvm.hex",
+  "hex": "fw\\hex\\e2e_mvm.hex",
   "tohost": 1,
   "uart": "PASS\n",
   "cycles": 5658,

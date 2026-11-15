@@ -60,7 +60,8 @@ riscv_mvm_e2e/
 
 ---
 
-完成度与未完成清单见 **`reports/G_COMPLETION_STATUS.md`**（2026-11-02：inner-admin ISS 已过，工程在 `qjxiang/ic_proj/riscv_mvm_e2e`，t28 库已对接，版图未出）。
+完成度与未完成清单见 **`reports/G_COMPLETION_STATUS.md`**（2026-11-15：ISS 已过；RTL/VCS、DC/PT、版图仍未完成）。  
+代码一致性审计与修复记录见 **`reports/LOGIC_AUDIT.md`**。
 
 ---
 
@@ -92,6 +93,8 @@ ISS_PASS
 PASS
 tohost=1 cycles=5658 instret=5655 irq_seen=3
 ISS_PASS
+ASSEMBLER_PASS
+CONSISTENCY_PASS
 COPRO_FSM_PASS  latency=13 cycles @50MHz = 260 ns, W1C ok
 PRECISION_PASS
 ```
@@ -197,11 +200,10 @@ mem_valid 保持到 mem_ready
 ### 5.2 互联
 
 ```
-addr[31:16]
-  0000  RAM
-  1000  UART
-  2000  MVM
-  3000  TOHOST
+0x0000_0000..0x0000_1FFF  RAM 8 KB（超出这个范围不再别名到 RAM）
+0x1000_0000 / 0x1000_0004  UART DATA / STATUS（精确地址）
+0x2000_0000..0x2000_00FF  MVM（256 字节窗口）
+0x3000_0000               TOHOST
 ```
 
 未映射地址立即 ready、读 0，CPU 不会死等。
@@ -237,14 +239,16 @@ python scripts/sim/run_all.py --iverilog
 bash scripts/sim/run_iverilog.sh
 ```
 
-**EDA2035 VCS：**
+**inner-admin VCS（推荐 LSF，不要在登录节点硬跑）：**
 
-```bash
-scp -r riscv_mvm_e2e eda2035:/ic_proj/
-ssh eda2035
-cd /ic_proj/riscv_mvm_e2e
-bash scripts/sim/run_vcs.sh
+```tcsh
+cd /home/xxypro/xyxue/Members/qjxiang/ic_proj/riscv_mvm_e2e
+bsub -q interactive -I -n 4 -R "rusage[mem=8000]" bash scripts/asic/run_vcs_unit.sh
+bsub -q interactive -I -n 4 -R "rusage[mem=16000]" bash scripts/asic/run_vcs_soc.sh
 ```
+
+完整前置检查和失败排查见 `docs/next_steps_tutorial.md` 第 C/D 站。  
+`scripts/sim/run_vcs.sh` 是旧的本地串联脚本，不再作为首选。
 
 三个 TB 的分工：
 
@@ -274,7 +278,7 @@ bash scripts/sim/run_vcs.sh
 
 ## 8. 第四站：t28 数字全流程
 
-ISS 已经通过、工程已在 inner-admin 之后，**不要再读 EDA2035 那套拷贝说明**。  
+ISS 已经通过、工程已在 inner-admin 之后，**不要再读旧虚拟机的拷贝说明**。  
 按站推进（DC → LSF+VCS → PT → Innovus → 填报告）见：
 
 **`docs/next_steps_tutorial.md`**

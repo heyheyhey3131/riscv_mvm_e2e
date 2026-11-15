@@ -6,7 +6,7 @@
 //   硬件还要按比特把字符移出去（ser_tx）；ISS 偷懒，直接把字节打印到终端。
 //
 // 寄存器：
-//   offset 0 DATA    写低 8 位启动一次发送（busy 时写被忽略）
+//   offset 0 DATA    写低 8 位启动一次发送；busy 时 ready=0，CPU 会保持事务
 //   offset 4 STATUS  读 bit0 = busy；rdata 组合给出，同周期可读
 //
 // 帧格式：1 start + 8 data LSB first + 1 stop，无校验。
@@ -32,16 +32,16 @@ module uart_tx #(
     output reg         ser_tx
 );
 
-// MMIO 同周期应答，和 mvm_copro / tohost 一致
-assign ready = valid;
-assign rdata = {31'b0, busy};
-
-wire wr_data = valid && (addr[3:0] == 4'h0) && wstrb[0];
-
 reg [9:0] sh;          // {stop, data[7:0], start}，最低位先出
 reg [3:0] bitcnt;      // 还剩几位，0 表示空闲
 reg [15:0] divcnt;
 wire busy = (bitcnt != 4'd0);
+
+// 读状态随时可答；写数据在 busy 时必须反压，否则 UART 会静默丢字符。
+assign ready = valid && ((wstrb == 4'b0000) || !busy);
+assign rdata = {31'b0, busy};
+
+wire wr_data = valid && (addr[3:0] == 4'h0) && wstrb[0];
 
 always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin

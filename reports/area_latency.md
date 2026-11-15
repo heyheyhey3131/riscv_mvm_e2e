@@ -3,7 +3,7 @@
 工艺目标：TSMC 28HPC+ / 0.9 V  
 DUT：`mvm_copro_top`  
 时钟约束：20 ns period，uncertainty 4 ns（20% 裕量写法）  
-更新日期：2026-11-02
+更新日期：2026-11-15
 
 ## 面积
 
@@ -14,7 +14,8 @@ DUT：`mvm_copro_top`
 | Total cell area | **未测** | |
 | 版图面积 (μm²) | **未测** | 需 Innovus |
 
-阻塞：EDA2035 SSH 超时（`192.168.72.143:22`），DC/Innovus 尚未跑。
+阻塞：DC/PT/Innovus 尚未在 inner-admin 跑出结果；不是 RTL 缺代码。  
+部署位置：`/home/xxypro/xyxue/Members/qjxiang/ic_proj/riscv_mvm_e2e`；库：`/home/xxypro/xyxue/Techlib/TSMC28`。
 
 RTL 规模（便于估工作量，**不能**当签核面积）：
 
@@ -24,7 +25,7 @@ RTL 规模（便于估工作量，**不能**当签核面积）：
 | `rtl/mvm/mvm_copro.v` | 寄存器堆 + 4 态 FSM |
 | `rtl/top/mvm_copro_top.v` | ASIC 顶层包装 |
 
-## 访问延迟（已测）
+## 访问延迟（FSM 模型 + 寄存器回读，不是后仿值）
 
 周期精确 FSM（`scripts/sim/check_copro_fsm.py`，对齐 RTL）：
 
@@ -46,7 +47,7 @@ ISS 端到端（`reports/iss_e2e.json`）三次运算的 `start → irq_enter` �
 | corner | WNS | 20% 裕量 |
 |---|---|---|
 | tt 0.9 V 25C | **未测** | SDC 已写 uncertainty=4 ns，PT 未跑 |
-| ss / ff | **未测** | 库是否有该 corner 待 VM 确认 |
+| ss / ff | **未测** | 当前只确认 NLDM 目录有 TT 0.9 V 25C；ss/ff 文件未确认 |
 
 ## 精度（已测，见 `precision.json`）
 

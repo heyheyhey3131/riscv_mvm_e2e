@@ -10,3 +10,6 @@ DVEfiles/
 __pycache__/
 *.pyc
 /tmp/
+.idea/vcs.xml
+*.pass1.txt
+*.pass2.txt

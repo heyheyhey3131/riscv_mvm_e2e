@@ -15,7 +15,7 @@
   - RV32I 整数指令（无乘除、无压缩）
   - CSR：csrrw/csrrs/csrrc 以及 csrrwi/csrrsi/csrrci
   - mret / ecall / ebreak / wfi / nop
-  - 伪指令：li, mv, j, jal, ret, call, beqz, bnez
+  - 伪指令：li（仅 12-bit 立即数）、mv、j、jal、ret、jr、call、beqz、bnez
   - 伪操作：.org .word .byte .equ .align .text
   - ABI 寄存器名与 x0..x31
   - 注释：# 或 //
@@ -351,7 +351,8 @@ class Assembler:
         if op == "jal" and len(a) == 1:
             return ["jal", "ra", a[0]]
         if op == "jr":
-            return ["jalr", "x0", a[0], "0"] if False else ["jalr", "x0", "0", a[0]]
+            # jalr rd, rs1, imm：rd=x0，rs1=a[0]，imm=0
+            return ["jalr", "x0", a[0], "0"]
         if op == "ret":
             return ["jalr", "x0", "0(ra)"]
         if op == "call":
@@ -367,8 +368,8 @@ class Assembler:
         return toks
 
     def _expand_li(self, rd, imm_tok):
-        # pass2 再求值，这里先占位成 lui/addi 序列不方便变长。
-        # 用单条占位，pass2 若超出 addi 立即数则报错，固件用 lui+addi。
+        # 本教学汇编器按「一条源指令 = 一个字」处理，不能在这里变长成 lui+addi。
+        # 因此 li 只接受 12-bit 有符号立即数；大常数请显式写 lui + addi。
         return ["addi", rd, "x0", imm_tok]
 
     def encode_op(self, pc, toks, lineno):

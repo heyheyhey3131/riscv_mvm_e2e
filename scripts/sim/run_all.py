@@ -6,9 +6,11 @@
     1. golden/mvm_ref.py      算出 4x4 MVM 测试向量的 6-bit 黄金结果
     2. fw/python/mini_asm.py  把汇编编成 $readmemh 用的 hex
     3. scripts/sim/iss.py     用 Python 指令集仿真器跑 CPU + 协处理器
-    4. check_copro_fsm.py     周期精确核对协处理器 FSM（latency=13）
-    5. check_precision.py     整数 / 实数 / 失配扫描，误差 ≤ 1 LSB
-    6. （可选 --iverilog）    再调 Icarus 跑 RTL testbench
+    4. check_assembler.py     固定机器码 / jr / li 边界
+    5. check_consistency.py   C / RTL / Python 地址与量化常量
+    6. check_copro_fsm.py     周期精确核对协处理器 FSM（latency=13）
+    7. check_precision.py     整数 / 实数 / 失配扫描，误差 ≤ 1 LSB
+    8. （可选 --iverilog）    再调 Icarus 跑 RTL testbench
 
 为什么第一站是 Python ISS，而不是 VCS / Icarus？
     本机不一定装了 Verilog 仿真器，也不一定有 RISC-V GCC。
@@ -349,6 +351,9 @@ def main():
             py, str(iss), str(hexdir / "e2e_mvm.hex"),
             "--report", str(ROOT / "reports" / "iss_e2e.json"),
         ])
+        # 先做静态一致性检查：地址/量化/默认 cfg 不能 C、RTL、Python 各写一套
+        run([py, str(ROOT / "scripts" / "sim" / "check_assembler.py")])
+        run([py, str(ROOT / "scripts" / "sim" / "check_consistency.py")])
         # 终端：一段 JSON（latency=13, mixed.outpack=420484641, errors=[]）
         #       然后 COPRO_FSM_PASS  latency=13 cycles @50MHz = 260 ns, W1C ok
         run([py, str(ROOT / "scripts" / "sim" / "check_copro_fsm.py")])

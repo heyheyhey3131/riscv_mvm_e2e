@@ -24,12 +24,16 @@
 
 module mvm_array_digital (
     input  wire [31:0] xin,
+
     input  wire [31:0] wrow0,
     input  wire [31:0] wrow1,
     input  wire [31:0] wrow2,
     input  wire [31:0] wrow3,
     output wire [31:0] ypack
 );
+
+// 必须与 rtl/include/soc_cfg.vh、fw/include/mvm_hw.h、fw/python/socmap.py 的 MVM_SCALE 一致
+localparam integer MVM_SCALE = 252;
 
 wire [5:0] x [0:3];
 wire [5:0] w [0:3][0:3];
@@ -65,7 +69,7 @@ function [5:0] quant6;
         if (acc < 0)
             q = 0;
         else
-            q = acc / 252;
+            q = acc / MVM_SCALE;
         if (q > 63)
             q = 63;
         quant6 = q[5:0];

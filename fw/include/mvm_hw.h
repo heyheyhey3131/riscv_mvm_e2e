@@ -17,6 +17,8 @@
 /* ---- 存储与启动 ---- */
 #define RAM_BASE      0x00000000u
 #define RAM_BYTES     8192u
+#define RAM_WORDS     (RAM_BYTES / 4u)     /* 2048 个 32-bit 字 */
+#define RESET_PC      0x00000000u
 #define STACK_TOP     0x00002000u         /* sp 初值，栈向低地址增长 */
 #define MTVEC_RESET   0x00000010u         /* 中断入口，固件用 nop 填满 0x00..0x0F */
 
@@ -28,7 +30,7 @@
 /* ---- MVM 协处理器 MMIO，字对齐 ---- */
 #define MVM_BASE      0x20000000u
 #define MVM_CTRL      (MVM_BASE + 0x00u)  /* 写 START 是脉冲，不占用存储位 */
-#define MVM_STATUS    (MVM_BASE + 0x04u)
+#define MVM_STATUS    (MVM_BASE + 0x04u)  /* [0] BUSY [1] DONE [2] IRQ [17:16] FSM */
 #define MVM_IRQ       (MVM_BASE + 0x08u)  /* 写 1 清除 irq 电平 */
 #define MVM_CONFIG    (MVM_BASE + 0x0Cu)
 #define MVM_INP       (MVM_BASE + 0x10u)  /* 小端：byte0 = x0 */
@@ -52,6 +54,8 @@
 #define MVM_BITS         6
 #define MVM_MAX          63
 #define MVM_SCALE        252              /* y = sum(x*w) / 252 */
+#define MVM_SETTLE_DEFAULT 8              /* 与 rtl 的 MVM_SETTLE_DFLT 一致 */
+#define MVM_ADC_DEFAULT    4              /* 与 rtl 的 MVM_ADC_DFLT 一致 */
 
 #define TOHOST_PASS      1u
 #define TOHOST_FAIL      3u

@@ -16,7 +16,12 @@ inner-admin 登录环境已带 VCS / DC / PT / Innovus。tcsh 下请用 bash：
 ```tcsh
 cd /home/xxypro/xyxue/Members/qjxiang/ic_proj/riscv_mvm_e2e
 bash scripts/asic/run_iss.sh
-bash scripts/asic/run_vcs_unit.sh
+
+# VCS 在登录节点内存不足会被 Killed，走 LSF：
+bsub -q interactive -I -n 4 -R "rusage[mem=8000]" bash scripts/asic/run_vcs_unit.sh
+bsub -q interactive -I -n 4 -R "rusage[mem=16000]" bash scripts/asic/run_vcs_soc.sh
+
+# DC / PT 要交互登录（license 环境）或 bsub：
 mkdir -p work_t28
 cd work_t28
 dc_shell -f ../scripts/asic/run_dc.tcl

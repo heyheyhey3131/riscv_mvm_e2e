@@ -10,7 +10,9 @@
 //   主设备拉高 m_valid 直到从设备给 m_ready；
 //   m_wstrb==0 表示读，非 0 表示按字节写。
 //
-// 译码只看 addr[31:16]，低位原样转发给从设备自己解析偏移。
+// RAM 用真实容量 8 KB 做边界，不能只看 addr[31:16]：
+//   0x0000_2000 以上不是 RAM，必须落到「未映射」而不是悄悄别名到 mem[0]。
+// UART / TOHOST 是精确地址；MVM 是 256 字节窗口（mvm_copro 只用 addr[7:0]）。
 // 未映射地址：立即 ready、读回 0，避免 CPU 永远等 ready。
 //
 // clk/rst_n 目前未用（纯组合互联），留着是为以后加寄存器切片。
@@ -62,10 +64,14 @@ module simple_interconnect (
 );
 
 // 片选：valid 为 0 时所有 sel 都为 0，从设备不会误响应
-wire sel_ram  = m_valid && (m_addr[31:16] == 16'h0000);
-wire sel_uart = m_valid && (m_addr[31:16] == 16'h1000);
-wire sel_mvm  = m_valid && (m_addr[31:16] == 16'h2000);
-wire sel_th   = m_valid && (m_addr[31:16] == 16'h3000);
+localparam [31:0] RAM_BYTES  = 32'd8192;
+localparam [31:0] UART_BASE  = 32'h1000_0000;
+localparam [31:0] TOHOST_BASE= 32'h3000_0000;
+
+wire sel_ram  = m_valid && (m_addr < RAM_BYTES);
+wire sel_uart = m_valid && ((m_addr == UART_BASE) || (m_addr == (UART_BASE + 32'h4)));
+wire sel_mvm  = m_valid && (m_addr[31:8] == 24'h200000);
+wire sel_th   = m_valid && (m_addr == TOHOST_BASE);
 wire sel_none = m_valid && !(sel_ram || sel_uart || sel_mvm || sel_th);
 
 assign ram_valid  = sel_ram;

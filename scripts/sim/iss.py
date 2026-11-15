@@ -551,8 +551,13 @@ def main():
     print(f"tohost={tohost} cycles={iss.cycles} instret={iss.instret} irq_seen={iss.irq_seen}")
     if args.report:
         args.report.parent.mkdir(parents=True, exist_ok=True)
+        # 报告里不要写 Windows/Linux 绝对路径，否则换机器后不可复现
+        try:
+            hex_ref = str(args.hex.resolve().relative_to(ROOT))
+        except ValueError:
+            hex_ref = args.hex.name
         payload = {
-            "hex": str(args.hex),
+            "hex": hex_ref,
             "tohost": tohost,
             "uart": uart,
             "cycles": iss.cycles,

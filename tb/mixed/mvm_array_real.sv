@@ -12,12 +12,12 @@
 
 `timescale 1ns / 1ps
 
-// MISMATCH 预留电导失配；当前 TB 用 0，与整数模型应对齐到 0 LSB。
+// 失配（mismatch）在 golden/mvm_ref.py 的 mvm_real() 里做 Monte Carlo；
+// 本模块是理想实数阵列，不保留未使用的 MISMATCH 参数，避免“写了却没生效”。
 // 不综合：含 real。有 Spectre 时改用 analog/*.va。
 module mvm_array_real #(
-    parameter real VREF     = 0.6,      // 输入满码对应 0.6 V，留出到 0.9 V 的余量
-    parameter real G_UNIT   = 1.0e-6,   // 1 LSB 电导 = 1 µS
-    parameter real MISMATCH = 0.0       // 相对失配幅度，0=理想
+    parameter real VREF   = 0.6,      // 输入满码对应 0.6 V，留出到 0.9 V 的余量
+    parameter real G_UNIT = 1.0e-6    // 1 LSB 电导 = 1 µS
 ) (
     input  wire [31:0] xin,
     input  wire [31:0] wrow0,
